@@ -7,6 +7,8 @@ program reduce
 
     a_d = 1
 
+    ! CUF kernels do the reduction operation automatically 
+    
     !$cuf kernel do <<<*,tPB>>>
     do i = 1, n
         aSum = aSum + a_d(i)

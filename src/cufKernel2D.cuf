@@ -10,6 +10,15 @@ program incrementTest
 
     a_d = a
 
+    ! In this case the do (2) specified on the directive indicates that the generated kernel will map to the two
+    ! following loops. Multidimensional thread blocks and grids specified by the execution configuration in
+    ! the directive map to the nested loops in an innermost to outermost fashion. For example, for the thread
+    ! block of 32 × 8, the predefined kernel variable threadIdx%x will run from 1 to 32 and map to the
+    ! i index, and threadIdx%y will run from 1 to 8 and map to the j index. Rather than specifying the
+    ! thread block size, we could have also used <<<(*,*),(*,*)>>> or even <<<*,*>>> 
+    ! and have the compiler choose the thread block and grid size.
+    !-----------------------------------------------------------------------------------------------------
+
     !$cuf kernel do (2) <<< (*,*), (32,8) >>>
     do j = 1, n
         do i = 1, n

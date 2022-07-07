@@ -1,0 +1,76 @@
+module mathOps
+    contains
+    ! The kernel i.e a function that runs on the device 
+    ! `attributes` describes the scope of the routine. `global` means its visible both from the host and device
+    ! This indicates the subroutine is run on the device but called from the host
+    attributes(global) subroutine saxpy(x, y, a)
+        implicit none
+        real :: x(:), y(:)
+        real, value :: a
+        integer :: i, n
+        n = size(x)
+
+        ! Remember the host launches "**grid** of block with each block having **tBlock** threads"
+        ! and each thread works on a single element of the array
+        ! These `blockDim`, `blockIdx` and `threadIdx` are provided defined by CUDA are similar to `dim3` type
+        ! As we used only `x` component to launch the kernel only `x` component is used
+
+        ! Think of this as there are groups (=`grid` in host) of threads and those groups are numbered with `blockIdx`
+        ! Each group has `blockDim` (=`tBlock` in host) number of threads and each thread inside a particular block
+        ! is numbered with `threadIdx`. 
+        ! Thus using this following formula we can calculate the offset of the element of array to be computed
+
+        i = blockDim%x * (blockIdx%x - 1) + threadIdx%x
+        !^ Note: This is an example of fine-grained parallelism
+
+        ! As we have launched more threads in the host than there are array element a conditional check is required
+        if (i <= n) y(i) = y(i) + a*x(i)
+
+    end subroutine saxpy 
+end module mathOps
+
+program testSaxpy
+    use mathOps
+    ! Fortran module that contains all the CUDA Fortran definitions
+    use cudafor
+    implicit none
+    integer, parameter :: N = 40000
+    ! host arrays
+    real :: x(N), y(N), a
+    ! device arrays, they are declared with the `device` attribute
+    real, device :: x_d(N), y_d(N)
+
+    ! Thread configuration to launch the kernel
+    ! Threads and block can be arranged in multidimensional nature. 
+    ! Here the they are defined as `dim3`, so they as have three components `x`,`y` and `z`.
+    type(dim3) :: grid, tBlock
+
+
+    ! In this example `tBlock` has 256 threads in `x` components and 
+    ! `grid` is defined such a way to accomodate all the `N = 40000` computation in blocks each having 256 threads.
+    tBlock = dim3(256,1,1)
+    grid = dim3(ceiling(real(N)/tBlock%x),1,1)
+
+    x = 1.0; y = 2.0; a = 2.0
+
+    ! copies the array from host to device and vice versa. 
+    ! The `cudafor` module overloads the assignment operator with `cudaMemcpy` calls 
+    ! so that the memory transfer can be done with a simple assignment operation. 
+    ! Note: This step actually moves data beween two physical devices and actually can be time consuming.
+    ! P.S. CUDA memory copy can also be done in asynchronous
+    x_d = x
+    y_d = y
+
+    ! Launches the kernel on the device. 
+    ! The information between the tripple braces are the excution configuration 
+    ! it says to launch **grid** of block with each block having **tBlock** threads.
+    ! This call is asynchronous, so the host can just call this and 
+    ! proceed to the next line without it's computation on the device being completed
+    call saxpy<<<grid, tBlock>>>(x_d, y_d, a)
+
+
+    ! Copyies data back to host. 
+    ! This process is synchronous and waits for the device to complete the calculation
+    y = y_d
+    write(*,*) 'Max error: ', maxval(abs(y-4.0))
+end program testSaxpy

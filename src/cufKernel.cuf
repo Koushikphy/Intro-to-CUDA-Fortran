@@ -10,6 +10,13 @@ program incrementTest
 
      a_d = a
 
+
+     ! A thread block of tPB threads is used when launching the kernel. The * specified for the first execution configuration
+     ! parameter leaves the compiler free to calculate the number of thread blocks to launch in order to carry out the 
+     ! operation in the loop. The execution configuration could have been specified as <<<*,*>>>, in which case the 
+     ! compiler would choose the thread block size as well as the number of thread blocks to launch.
+     !------------------------------------------------------------------------------------------------------------------------
+
      !$cuf kernel do <<<*,tPB>>>
      do i = 1, n
           a_d(i) = a_d(i) + b

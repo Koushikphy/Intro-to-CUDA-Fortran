@@ -10,6 +10,12 @@ program ilp
 
     a_d = a
 
+
+    ! Here the 1024 blocks of 256 threads cannot processes the 1024 2 elements if each thread processes
+    ! a single element, so the compiler generates a loop that results in each thread processing four array
+    ! elements.
+    !-----------------------------------------------------------------------------------------------------
+
     !$cuf kernel do <<<1024,tPB>>>
     do i = 1, n
         a_d(i) = a_d(i) + b
