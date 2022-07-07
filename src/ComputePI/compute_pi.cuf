@@ -1,0 +1,69 @@
+
+! Compute pi using a Monte Carlo method 
+
+program compute_pi
+    use curand_m
+    implicit none
+    real(fp_kind), allocatable:: hostData(:)
+    real(fp_kind), allocatable, device:: deviceData(:)
+    real(fp_kind) :: pival
+    integer :: inside_gpu, inside_cpu, N, i
+    integer(kind=int_ptr_kind()) :: gen, twoN
+    integer(kind=8) :: seed
+
+    ! Define how many numbers we want to generate
+    N=10000000
+    twoN=N*2
+
+    ! Allocate array on CPU
+    allocate(hostData(twoN))
+
+    ! Allocate array on GPU
+    allocate(deviceData(twoN))
+
+
+    ! Create pseudonumber generator
+    call curandCreateGenerator(gen, CURAND_RNG_PSEUDO_DEFAULT)
+
+    ! Set seed
+    seed=1234
+    call curandSetPseudoRandomGeneratorSeed( gen, seed)
+
+    ! Generate N floats or double on device
+    call curandGenerateUniform(gen, deviceData, twoN)
+
+    ! Copy the data back to CPU to check result later
+    hostData=deviceData
+
+    ! Perform the test on GPU using CUF kernel
+    inside_gpu=0
+    !$cuf kernel do <<<*,*>>>
+    do i=1,N
+        if( (deviceData(i)**2+deviceData(i+N)**2) <= 1._fp_kind ) inside_gpu=inside_gpu+1
+    end do
+
+    ! Perform the test on CPU 
+    inside_cpu=0
+    do i=1,N
+        if( (hostData(i)**2+hostData(i+N)**2) <= 1._fp_kind ) inside_cpu=inside_cpu+1
+    end do
+
+    ! Check the results
+    if (inside_cpu .ne. inside_gpu) then
+        write(*,*) "Mismatch between CPU/GPU"
+        write(*,*) "Test Failed"
+    else
+        write(*,*) "Test Passed"
+    endif
+
+    ! Print the value of pi and the error
+    pival= 4._fp_kind*real(inside_gpu,fp_kind)/real(N,fp_kind)
+    write(*,"(t3,a,i10,a,f10.8,a,e11.4)") "Samples=", N, "  Pi=", pival, "  Error=", abs(pival-2.0_fp_kind*asin(1.0_fp_kind))
+
+    ! Deallocate data on CPU and GPU
+    deallocate(hostData)
+    deallocate(deviceData)
+
+    ! Destroy the generator
+    call curandDestroyGenerator(gen)
+end program compute_pi

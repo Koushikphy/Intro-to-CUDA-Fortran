@@ -1,0 +1,26 @@
+program ilp
+    implicit none
+    integer, parameter :: n = 1024*1024
+    integer :: a(n), i, b
+    integer, device :: a_d(n)
+    integer, parameter :: tPB = 256
+
+    a = 1
+    b = 3
+
+    a_d = a
+
+    !$cuf kernel do <<<1024,tPB>>>
+    do i = 1, n
+        a_d(i) = a_d(i) + b
+    enddo
+
+    a = a_d
+
+    if (any(a /= 4)) then
+        write(*,*) '**** Program Failed ****'
+    else
+        write(*,*) 'Program Passed'
+    endif
+end program ilp
+

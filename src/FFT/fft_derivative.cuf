@@ -1,0 +1,76 @@
+program fft_derivative
+    use iso_c_binding
+    use cufft_m
+    implicit none
+    real(fp_kind), allocatable:: kx(:), derivative(:)
+    real(fp_kind), allocatable, device:: kx_d(:)
+
+    complex(fp_kind), allocatable:: cinput(:),coutput(:)
+    complex(fp_kind), allocatable, device:: cinput_d(:),coutput_d(:)
+
+    integer:: i,j,n
+    type(c_ptr):: plan
+    real(fp_kind):: twopi=8._fp_kind*atan(1._fp_kind),h
+
+    character*1:: a
+    real(fp_kind):: x,y,z
+    integer:: nerrors
+
+    n=8
+    h=twopi/real(n,fp_kind)
+
+    ! allocate arrays on the host
+    allocate (cinput(n),coutput(n),derivative(n),kx(n))
+
+    ! allocate arrays on the device
+    allocate (cinput_d(n),coutput_d(n),kx_d(n))
+
+    ! initialize arrays on host
+    kx =(/ ((i-1), i=1,n/2), ((-n+i-1), i=n/2+1,n) /)
+
+    ! Set the wave number for the Nyquist frequency to zero
+    kx(n/2+1)=0._fp_kind
+
+    ! Copy the wave number vector to the device
+    kx_d=kx
+
+    do i=1,n
+        cinput(i)=(cos(2*real(i-1,fp_kind)*h) +sin(3*real(i-1,fp_kind)*h))
+        derivative(i)=(-2*sin(2*real(i-1,fp_kind)*h) +3*cos(3*real(i-1,fp_kind)*h))
+    end do
+
+    ! copy input to device
+    cinput_d=cinput
+
+    ! Initialize the plan for complex to complex transform
+    if (fp_kind== singlePrecision) call cufftPlan1D(plan,n,CUFFT_C2C,1)
+    if (fp_kind== doublePrecision) call cufftPlan1D(plan,n,CUFFT_Z2Z,1)
+
+    ! Forward transform out of place
+    call cufftExec(plan,cinput_d,coutput_d,CUFFT_FORWARD)
+
+    ! Compute the derivative in spectral space and normalize the FFT
+    !$cuf kernel do <<<*,*>>>
+    do i=1,n
+        coutput_d(i)=cmplx(0.,kx_d(i),fp_kind)*coutput_d(i)/n
+    end do
+
+    ! Inverse transform in place
+    call cufftExec(plan,coutput_d,coutput_d,CUFFT_INVERSE)
+
+    ! Copy results back to host
+    coutput=coutput_d
+
+    print *," First Derivative from complex array"
+    do i=1,n
+        write(*,'(i2,2(1x,f8.4),2x,e13.7)') i,real(coutput(i)),derivative(i),real(coutput(i))-derivative(i)
+    end do
+
+    !release memory on the host and on the device
+    deallocate (cinput,coutput,kx,derivative,cinput_d,coutput_d,kx_d)
+
+    ! Destroy the plans
+    call cufftDestroy(plan)
+
+end program fft_derivative
+

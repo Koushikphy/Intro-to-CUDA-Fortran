@@ -1,0 +1,1 @@
+nvfortran curand_m.cuf compute_pi.cuf -cudalib=curand

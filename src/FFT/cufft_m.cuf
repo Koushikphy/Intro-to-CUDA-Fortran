@@ -1,0 +1,139 @@
+
+module cufft_m
+
+    integer, public :: CUFFT_FORWARD = -1
+    integer, public :: CUFFT_INVERSE =  1
+    integer, public :: CUFFT_R2C = Z'2a' ! Real to Complex (interleaved)
+    integer, public :: CUFFT_C2R = Z'2c' ! Complex (interleaved) to Real
+    integer, public :: CUFFT_C2C = Z'29' ! Complex to Complex, interleaved
+    integer, public :: CUFFT_D2Z = Z'6a' ! Double to Double-Complex
+    integer, public :: CUFFT_Z2D = Z'6c' ! Double-Complex to Double
+    integer, public :: CUFFT_Z2Z = Z'69' ! Double-Complex to Double-Complex
+
+    integer, parameter, public :: singlePrecision = kind(0.0) 
+    integer, parameter, public :: doublePrecision = kind(0.0d0) 
+
+    integer, parameter, public :: fp_kind = doublePrecision
+    !   integer, parameter, public :: fp_kind = singlePrecision
+
+
+    interface cufftDestroy
+        subroutine cufftDestroy(plan) bind(C,name='cufftDestroy') 
+            use iso_c_binding
+            type(c_ptr),value:: plan
+        end subroutine cufftDestroy
+    end interface cufftDestroy
+
+    interface cufftSetStream
+        subroutine cufftSetStream(plan, stream) bind(C,name='cufftSetStream') 
+            use iso_c_binding
+            use cudafor
+            type(c_ptr),value:: plan
+            integer(kind=cuda_stream_kind),value:: stream
+        end subroutine cufftSetStream
+    end interface cufftSetStream
+
+    interface cufftExec
+
+        subroutine cufftExecC2C(plan, idata, odata, direction) bind(C,name='cufftExecC2C') 
+            use iso_c_binding
+            import singlePrecision, doublePrecision
+            type(c_ptr),value:: plan
+            integer(c_int),value:: direction
+            !pgi$ ignore_tr idata,odata
+            complex(singlePrecision),device:: idata(*),odata(*)
+        end subroutine cufftExecC2C
+
+        subroutine cufftExecZ2Z(plan, idata, odata, direction) bind(C,name='cufftExecZ2Z') 
+            use iso_c_binding
+            import singlePrecision, doublePrecision
+            type(c_ptr),value:: plan
+            integer(c_int),value:: direction
+            !pgi$ ignore_tr idata,odata
+            complex(doublePrecision),device:: idata(*),odata(*)
+        end subroutine cufftExecZ2Z
+
+        subroutine cufftExecR2C(plan, idata, odata) bind(C,name='cufftExecR2C') 
+            use iso_c_binding
+            import singlePrecision, doublePrecision
+            type(c_ptr),value:: plan
+            integer(c_int),value:: direction
+            !pgi$ ignore_tr idata,odata
+            real(singlePrecision),device:: idata(*)
+            complex(singlePrecision),device:: odata(*)
+        end subroutine cufftExecR2C
+
+        subroutine cufftExecD2Z(plan, idata, odata) bind(C,name='cufftExecD2Z') 
+            use iso_c_binding
+            import singlePrecision, doublePrecision
+            type(c_ptr),value:: plan
+            integer(c_int),value:: direction
+            !pgi$ ignore_tr idata,odata
+            real(doublePrecision),device:: idata(*)
+            complex(doublePrecision),device:: odata(*)
+        end subroutine cufftExecD2Z
+
+        subroutine cufftExecR2Cinplace(plan, idata, odata) bind(C,name='cufftExecR2C') 
+            use iso_c_binding
+            import singlePrecision, doublePrecision
+            type(c_ptr),value:: plan
+            integer(c_int),value:: direction
+            !pgi$ ignore_tr idata,odata
+            real(singlePrecision),device:: idata(*)
+            real(singlePrecision),device:: odata(*)
+        end subroutine cufftExecR2Cinplace
+
+        subroutine cufftExecD2Zinplace(plan, idata, odata) bind(C,name='cufftExecD2Z') 
+            use iso_c_binding
+            import singlePrecision, doublePrecision
+            type(c_ptr),value:: plan
+            !pgi$ ignore_tr idata,odata
+            real(doublePrecision),device:: idata(*)
+            real(doublePrecision),device:: odata(*)
+        end subroutine cufftExecD2Zinplace
+
+    end interface cufftExec
+
+    interface cufftPlan1d
+        subroutine cufftPlan1d(plan, nx, type, batch) bind(C,name='cufftPlan1d') 
+        use iso_c_binding
+        type(c_ptr):: plan
+        integer(c_int),value:: nx, batch,type
+        end subroutine cufftPlan1d
+    end interface cufftPlan1d
+
+
+    interface cufftPlanMany
+        subroutine cufftPlanMany(plan, rank, n, inembed, istride, idist, onembed, ostride, odist,type, batch) bind(C,name='cufftPlanMany')
+            use iso_c_binding
+            implicit none
+            !pgi$ ignore_tkr n, inembed, onembed       
+            type(c_ptr) :: plan
+            integer(c_int) :: n, inembed, onembed
+            integer(c_int), value:: rank, istride, ostride, idist, odist, type, batch
+        end subroutine cufftPlanMany
+    end interface cufftPlanMany
+
+    interface cufftPlan2d
+        module procedure cufftPlan2Dswap
+    end interface cufftPlan2d
+
+    interface cufftPlan2dC
+        subroutine cufftPlan2d(plan, nx, ny, type) bind(C,name='cufftPlan2d')
+            use iso_c_binding
+            type(c_ptr):: plan
+            integer(c_int),value:: nx, ny, type
+        end subroutine cufftPlan2d
+    end interface cufftPlan2dC
+
+contains
+
+    subroutine cufftPlan2Dswap(plan,nx,ny, type) 
+        use iso_c_binding
+        type(c_ptr):: plan
+        integer(c_int),value:: nx, ny, type
+        call cufftPlan2dC(plan,ny,nx,type) 
+    end subroutine cufftPlan2Dswap
+
+end module cufft_m
+

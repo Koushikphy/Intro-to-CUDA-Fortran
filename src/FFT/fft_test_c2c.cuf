@@ -1,0 +1,60 @@
+program fft_test_c2c
+    use iso_c_binding
+    ! use precision_m
+    use cufft_m
+    implicit none
+    integer, allocatable:: kx(:)
+    complex(fp_kind), allocatable:: cinput(:),coutput(:)
+    complex(fp_kind), allocatable, device:: cinput_d(:),coutput_d(:)
+
+    integer:: i,j,k,n
+    type(c_ptr):: plan
+    real(fp_kind):: twopi=8._fp_kind*atan(1._fp_kind),h
+
+    character*1:: a
+    real(fp_kind):: w,x,y,z
+    integer:: nerrors
+
+    n=16
+    h=twopi/real(n,fp_kind)
+
+    ! allocate arrays on the host
+    allocate (cinput(n),coutput(n),kx(n))
+
+    ! allocate arrays on the device
+    allocate (cinput_d(n),coutput_d(n))
+
+    !initialize arrays on host
+    kx =(/ (i-1, i=1,n/2), (-n+i-1, i=n/2+1,n) /)
+
+    do i=1,n
+        cinput(i)=(cos(2*real(i-1,fp_kind)*h)+sin(3*real(i-1,fp_kind)*h))
+    end do
+
+    !copy arrays to device
+    cinput_d=cinput
+
+    ! Initialize the plan for complex to complex transform
+    if (fp_kind== singlePrecision) call cufftPlan1D(plan,n,CUFFT_C2C,1)
+    if (fp_kind== doublePrecision) call cufftPlan1D(plan,n,CUFFT_Z2Z,1)
+
+    ! Forward transform out of place
+    call cufftExec(plan,cinput_d,coutput_d,CUFFT_FORWARD)
+
+    ! Copy results back to host
+    coutput=coutput_d
+
+    print *," Transform from complex array"
+    do i=1,n
+        write(*,'(i2,1x,2(f8.4),2x,i2,2(f8.4))') i,cinput(i),kx(i),coutput(i)/n
+    end do
+
+
+    !release memory on the host and on the device
+    deallocate (cinput,coutput,kx,cinput_d,coutput_d)
+
+    ! Destroy the plans
+    call cufftDestroy(plan)
+
+end program fft_test_c2c
+

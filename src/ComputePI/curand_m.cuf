@@ -1,0 +1,77 @@
+
+module curand_m
+    integer, public :: CURAND_RNG_PSEUDO_DEFAULT = 100 
+    integer, public :: CURAND_RNG_PSEUDO_XORWOW  = 101 
+    integer, public :: CURAND_RNG_QUASI_DEFAULT  = 200 
+    integer, public :: CURAND_RNG_QUASI_SOBOL32  = 201
+
+
+    integer, parameter :: singlePrecision = kind(0.0)
+    integer, parameter :: doublePrecision = kind(0.0d0)
+
+    integer, parameter :: fp_kind = doublePrecision
+    ! integer, parameter :: fp_kind = singlePrecision
+
+
+    interface curandCreateGenerator
+        subroutine curandCreateGenerator( generator,rng_type)  bind(C,name='curandCreateGenerator') 
+            use iso_c_binding
+            integer(c_size_t):: generator
+            integer(c_int),value:: rng_type
+        end subroutine curandCreateGenerator
+    end interface curandCreateGenerator
+
+    interface curandSetPseudoRandomGeneratorSeed
+        subroutine curandSetPseudoRandomGeneratorSeed( generator,seed) bind(C,name='curandSetPseudoRandomGeneratorSeed')
+            use iso_c_binding
+            integer(c_size_t), value:: generator
+            integer(c_long_long),value:: seed
+        end subroutine curandSetPseudoRandomGeneratorSeed
+    end interface curandSetPseudoRandomGeneratorSeed
+
+    interface curandGenerateUniform
+        subroutine curandGenerateUniform( generator, odata, numele) bind(C,name='curandGenerateUniform')
+            use iso_c_binding
+            integer(c_size_t),value:: generator
+            !pgi$ ignore_tr odata
+            real(c_float), device:: odata(*)
+            integer(c_size_t),value:: numele
+        end subroutine curandGenerateUniform
+
+        subroutine curandGenerateUniformDouble(generator, odata, numele) bind(C,name='curandGenerateUniformDouble')
+            use iso_c_binding
+            integer(c_size_t),value:: generator
+            !pgi$ ignore_tr odata
+            real(c_double), device:: odata(*)
+            integer(c_size_t),value:: numele
+        end subroutine curandGenerateUniformDouble
+    end interface curandGenerateUniform
+
+    interface curandGenerateNormal
+        subroutine curandGenerateNormal( generator, odata, numele, mean,stddev) bind(C,name='curandGenerateNormal')
+            use iso_c_binding
+            integer(c_size_t),value:: generator
+            !pgi$ ignore_tr odata
+            real(c_float), device:: odata(*)
+            integer(c_size_t),value:: numele
+            real(c_float), value:: mean,stddev
+        end subroutine curandGenerateNormal
+
+        subroutine curandGenerateNormalDouble( generator, odata, numele,mean, stddev) bind(C,name='curandGenerateNormalDouble')
+            use iso_c_binding
+            integer(c_size_t),value:: generator
+            !pgi$ ignore_tr odata
+            real(c_double), device:: odata(*)
+            integer(c_size_t),value:: numele
+            real(c_double), value:: mean,stddev
+        end subroutine curandGenerateNormalDouble
+    end interface curandGenerateNormal
+
+    interface curandDestroyGenerator
+        subroutine curandDestroyGenerator(generator) bind(C,name='curandDestroyGenerator')
+            use iso_c_binding
+            integer(c_size_t),value:: generator
+        end subroutine curandDestroyGenerator
+    end interface curandDestroyGenerator
+
+end module curand_m

@@ -1,0 +1,28 @@
+
+program incrementTest  
+    implicit none
+    integer, parameter :: n = 4*1024
+    integer :: a(n,n), i, j, b
+    integer, device :: a_d(n,n)
+
+    a = 1
+    b = 3
+
+    a_d = a
+
+    !$cuf kernel do (2) <<< (*,*), (32,8) >>>
+    do j = 1, n
+        do i = 1, n
+            a_d(i,j) = a_d(i,j) + b
+        enddo
+    enddo
+
+    a = a_d
+
+    if (any(a /= 4)) then
+        write(*,*) '**** Program Failed ****'
+    else
+        write(*,*) 'Program Passed'
+    endif
+end program incrementTest
+

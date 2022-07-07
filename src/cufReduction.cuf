@@ -1,0 +1,21 @@
+program reduce
+    implicit none
+    integer, parameter :: n = 1024*1024
+    integer :: i, aSum = 0
+    integer, device :: a_d(n)
+    integer, parameter :: tPB = 256
+
+    a_d = 1
+
+    !$cuf kernel do <<<*,tPB>>>
+    do i = 1, n
+        aSum = aSum + a_d(i)
+    enddo
+
+    if (aSum /= n) then
+        write(*,*) '**** Program Failed ****'
+    else
+        write(*,*) 'Program Passed'
+    endif
+end program reduce
+
