@@ -9,7 +9,7 @@
 ## GPU & CUDA Programming Model  
 &nbsp;
 ![GPU vs CPU](./gpu_cpu.png)
-- __The Host & Device:__ The CPU and its on chip memory is called in one shot as the host. On the other hand the GPU and its on chip memory is called the device. They are usually connected with PCI bus have much slower data bandwidth compared to the each processing unit and their memory. Thus frequent exchange of data between the two memory is highly discourage
+- __The Host & Device:__ The CPU and its memory is called the host. On the other hand the GPU and its memory is called the device. They are usually connected with PCI bus which have much slower data bandwidth compared to the each processing unit and their memory and moving data between them is time consuming. Thus frequent exchange of data between the two memory is highly discourage
 
 - __Kernels:__ A function that is executed on the GPU.
 - __Threads Hierarchy__ 
