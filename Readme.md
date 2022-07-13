@@ -195,10 +195,10 @@ $ sudo nvprof ./a.out
 
 ---
 
-### Source Codes examples
+
+## Source Codes examples
 #### Loop parallelization:
 `!$cuf kernel do` directive can be used to simplify parallelizing loops. These directives instruct the compiler to generate kernels from a region of host code consisting of tightly nested loops. Essentially, kernel loop directives allow us to inline kernels in host code.  
-__Sample Codes__:  
 1. [Loop parallelization](./src/cufKernel.cuf)
 1. [Loop parallelization 2](./src/cufILP.cuf)
 3. [Nested Loop parallelization](./src/cufKernel2D.cuf)
@@ -211,8 +211,9 @@ __Sample Codes__:
 7. [Derivative with FFT](./src/FFT/)
 
 
+---
 
-
+&nbsp;
 
 ### References
 1. __CUDA Fortran for Scientists and Engineers__ by Gregory Ruetsch & Massimiliano Fatica
