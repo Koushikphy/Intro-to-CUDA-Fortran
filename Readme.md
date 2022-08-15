@@ -18,7 +18,7 @@
     - __Grid:__ The collection of blocks that gets mapped on the entire GPU 
     - Blocks and Grids can be 1D, 2D or 3D and the program has to written in such way to control over multidimensional Blocks/Grids.
 
-- __Flow of Program:__ The main code execution is started on the CPU aka the host. Separate memory are allocated for host and device to hold the data for each of their computation. When needed the data is copied to the device from host and back. Host can launch a group of kernels on the device. When the kernels are launched, the host does not wait for the kernels execution to finish and can proceed with its own flow. The memory copy between the host and can be synchronous or asynchronous. Usually they are done in synchronous manner. The assignment operator (`=`) in CUDA Fortran is overloaded with synchronous memory copy i.e. the copy operation will wait for the kernels to finish their execution
+- __Flow of Program:__ The main code execution is started on the CPU aka the host. Separate memory are allocated for host and device to hold the data for each of their computation. When needed the data is copied to the device from host and back. Host can launch a group of kernels on the device. When the kernels are launched, the host does not wait for the kernels execution to finish and can proceed with its own flow. The memory copy between the host and  device can be synchronous or asynchronous. Usually they are done in synchronous manner. The assignment operator (`=`) in CUDA Fortran is overloaded with synchronous memory copy i.e. the copy operation will wait for the kernels to finish their execution
 
 ---
 
